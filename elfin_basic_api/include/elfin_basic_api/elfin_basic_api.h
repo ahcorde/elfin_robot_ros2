@@ -105,15 +105,11 @@ private:
     rclcpp::Client<std_srvs::srv::SetBool>::SharedPtr get_motion_state_client_;
     rclcpp::Client<std_srvs::srv::SetBool>::SharedPtr get_pos_align_state_client_;
 
-    //std_srvs::srv::SetBool::Request::SharedPtr raw_enable_robot_request_;
-    //std_srvs::srv::SetBool::Response::SharedPtr raw_enable_robot_response_;
     rclcpp::Client<std_srvs::srv::SetBool>::SharedPtr raw_enable_robot_client_;
-
 
     std_srvs::srv::SetBool::Request::SharedPtr raw_disable_robot_request_;
     std_srvs::srv::SetBool::Response::SharedPtr raw_disable_robot_response_;
     rclcpp::Client<std_srvs::srv::SetBool>::SharedPtr raw_disable_robot_client_;
-
 
     std_msgs::msg::String ref_link_name_msg_;
     std_msgs::msg::String end_link_name_msg_;

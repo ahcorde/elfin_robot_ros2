@@ -811,7 +811,7 @@ bool ElfinEtherCATDriver::recognizePosition_cb(const std::shared_ptr<std_srvs::s
 
 void ElfinEtherCATDriver::error_log(int line, std::string log, std::string log_param)
 {
-    RCLCPP_ERROR(ed_nh_->get_logger(),"line: %d, %s"+log,line,log_param);
+    RCLCPP_ERROR(ed_nh_->get_logger(),"line: %d, %s, %s",log,line,log_param);
 }
 
 int32_t ElfinEtherCATDriver::getIntFromStr(std::string str)

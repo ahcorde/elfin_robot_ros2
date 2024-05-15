@@ -20,8 +20,8 @@ controller_manager:
         - elfin_joint5
         - elfin_joint6
 
-    joint_state_controller:
-      type: joint_state_controller/JointStateController
+    joint_state_broadcaster:
+      type: joint_state_broadcaster/JointStateBroadcaster
 
 elfin_arm_controller:
   ros__parameters:
@@ -34,15 +34,16 @@ elfin_arm_controller:
      - elfin_joint6
     command_interfaces:
       - position
+      - velocity
     state_interfaces:
       - position
-      # - velocity
+      - velocity
     state_publish_rate: 100.0
     action_monitor_rate: 20.0
     allow_partial_joints_goal: false
     constraints:
       stopped_velocity_tolerance: 0.2
-      goal_time: 0.6
+      goal_time: 0.0
       elfin_joint1: { trajectory: 0.2, goal: 0.1 }
       elfin_joint2: { trajectory: 0.2, goal: 0.1 }
       elfin_joint3: { trajectory: 0.2, goal: 0.1 }

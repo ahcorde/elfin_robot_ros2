@@ -4,7 +4,6 @@
 #include <cmath>
 #include <rclcpp/rclcpp.hpp>
 #include <elfin_ethercat_driver/elfin_ethercat_driver.h>
-#include <urdf/model.h>
 #include <pthread.h>
 #include <time.h>
 #include <math.h>
@@ -17,9 +16,8 @@
 #include <boost/thread/mutex.hpp>
 
 #include <sensor_msgs/msg/joint_state.hpp>
-#include <controller_manager/controller_manager.hpp>
+#include "controller_manager/controller_manager.hpp"
 #include <std_msgs/msg/float64.hpp>
-#include <hardware_interface/base_interface.hpp>
 #include <hardware_interface/system_interface.hpp>
 #include <hardware_interface/types/hardware_interface_type_values.hpp>
 #include "visibility_control.h"
@@ -27,12 +25,17 @@
 #include <hardware_interface/visibility_control.h>
 #include <hardware_interface/hardware_info.hpp>
 #include <hardware_interface/types/hardware_interface_return_values.hpp>
-#include <hardware_interface/types/hardware_interface_status_values.hpp>
+#include <hardware_interface/types/hardware_interface_type_values.hpp>
 #include <rclcpp/logger.hpp>
 #include <rclcpp/macros.hpp>
 
+#include <rclcpp_lifecycle/node_interfaces/lifecycle_node_interface.hpp>
+#include <rclcpp_lifecycle/state.hpp>
+
 // using namespace ELFIN;
+using hardware_interface::CallbackReturn;
 using hardware_interface::return_type;
+
 
 namespace elfin_hardware_interface
 {
@@ -56,6 +59,8 @@ typedef struct{
     double velocity_cmd;
     double vel_ff_cmd;
     double effort_cmd;
+
+    double position_cmd_last;
 }AxisInfo;
 
 typedef struct{
@@ -64,14 +69,14 @@ typedef struct{
     AxisInfo axis2;
 }ModuleInfo;
 
-class ElfinHWInterface : public hardware_interface::BaseInterface<hardware_interface::SystemInterface>
+class ElfinHWInterface : public hardware_interface::SystemInterface
 {
 public:
 
   RCLCPP_SHARED_PTR_DEFINITIONS(ElfinHWInterface)
 
   // ELFIN_HARDWARE_INTERFACE_PUBLIC
-  return_type configure(const hardware_interface::HardwareInfo& info) override;
+  CallbackReturn on_init(const hardware_interface::HardwareInfo & info) override;
 
   // ELFIN_HARDWARE_INTERFACE_PUBLIC
   std::vector<hardware_interface::StateInterface> export_state_interfaces() override;
@@ -87,16 +92,17 @@ public:
   return_type perform_command_mode_switch(const std::vector<std::string>&, const std::vector<std::string>&) override;
 
   // ELFIN_HARDWARE_INTERFACE_PUBLIC
-  return_type start() override;
+  CallbackReturn on_activate(const rclcpp_lifecycle::State & previous_state) override;
 
   // ELFIN_HARDWARE_INTERFACE_PUBLIC
-  return_type stop() override;
+  CallbackReturn on_deactivate(const rclcpp_lifecycle::State & previous_state) override;
 
   // ELFIN_HARDWARE_INTERFACE_PUBLIC
-  return_type read() override;
+  return_type read(const rclcpp::Time &time, const rclcpp::Duration &period) override;
+
 
   // ELFIN_HARDWARE_INTERFACE_PUBLIC
-  return_type write() override;
+  return_type write(const rclcpp::Time &time, const rclcpp::Duration &period) override;
 
 private:
 
@@ -106,8 +112,7 @@ private:
   std::vector<ModuleInfo> module_infos_;
 
   rclcpp::Node::SharedPtr n_;
-
-  rclcpp::Time read_update_time_;
+  rclcpp::Node::SharedPtr m_;
 
   std::vector<bool> pre_switch_flags_;
   std::vector<boost::shared_ptr<boost::mutex> > pre_switch_mutex_ptrs_;
@@ -121,6 +126,7 @@ private:
   bool pos_interface_running = false;
   bool first_pass_ = true;
   bool initialized_ = false;
+
 };
 } 
 

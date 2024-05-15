@@ -1,7 +1,7 @@
 #!/usr/bin/python3
 
 # elfin5.launch.py:
-# Launch file for the elfin5 Robot GAZEBO + MoveIt!2 SIMULATION in ROS2 Foxy:
+# Launch file for the elfin5 Robot GAZEBO + MoveIt!2 SIMULATION in ROS2 Humble:
 
 # Import libraries:
 import os

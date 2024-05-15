@@ -75,8 +75,11 @@ namespace elfin_hardware_interface{
     }
   }
 
-  return_type ElfinHWInterface::configure(const hardware_interface::HardwareInfo & info)
+  CallbackReturn ElfinHWInterface::on_init(const hardware_interface::HardwareInfo & info)
   {
+    if (hardware_interface::SystemInterface::on_init(info) != hardware_interface::CallbackReturn::SUCCESS) {
+      return hardware_interface::CallbackReturn::ERROR;
+    }
     n_ = rclcpp::Node::make_shared("elfin_hw");
     std::vector<std::string> elfin_driver_names_default;
     std::string ethercat_name_default = "eth0";
@@ -168,11 +171,31 @@ namespace elfin_hardware_interface{
     {
       pre_switch_mutex_ptrs_[i] = boost::shared_ptr<boost::mutex>(new boost::mutex);
     }
-    // for(unsigned int i=0;i<ethercat_drivers_.size();i++)
-    // {
-    //   ethercat_drivers_[i]->enableRobot_test();
-    // }
-    return return_type::OK;
+    sleep(5.0);
+    for(size_t i=0;i<module_infos_.size();i++)
+    {
+      int32_t pos_count1 = module_infos_[i].client_ptr->getAxis1PosCnt();
+      int16_t vel_count1 = module_infos_[i].client_ptr->getAxis1VelCnt();
+      int16_t trq_count1 = module_infos_[i].client_ptr->getAxis1TrqCnt();
+      int32_t pos_count_diff_1 = pos_count1 - module_infos_[i].axis1.count_zero;
+
+      double position_tmp1 = -1*pos_count_diff_1/module_infos_[i].axis1.count_rad_factor;
+      module_infos_[i].axis1.position = position_tmp1;
+      module_infos_[i].axis1.velocity = -1*vel_count1/module_infos_[i].axis1.count_rad_per_s_factor;
+      module_infos_[i].axis1.effort = -1*trq_count1/module_infos_[i].axis1.count_Nm_factor;
+      
+
+      int32_t pos_count2 = module_infos_[i].client_ptr->getAxis2PosCnt();
+      int16_t vel_count2 = module_infos_[i].client_ptr->getAxis2VelCnt();
+      int16_t trq_count2 = module_infos_[i].client_ptr->getAxis2TrqCnt();
+      int32_t pos_count_diff_2 = pos_count2 - module_infos_[i].axis2.count_zero;
+      
+      double position_tmp2 = -1*pos_count_diff_2/module_infos_[i].axis2.count_rad_factor;
+      module_infos_[i].axis2.position = position_tmp2;
+      module_infos_[i].axis2.velocity = -1*vel_count2/module_infos_[i].axis2.count_rad_per_s_factor;
+      module_infos_[i].axis2.effort = -1*trq_count2/module_infos_[i].axis2.count_Nm_factor;
+    }
+    return CallbackReturn::SUCCESS;
   }
 
   std::vector<hardware_interface::StateInterface> ElfinHWInterface::export_state_interfaces()
@@ -252,30 +275,7 @@ namespace elfin_hardware_interface{
     return return_type::OK;
   }
 
-  return_type ElfinHWInterface::start()
-  {
-    read();
-    status_ = hardware_interface::status::STARTED;
-    RCLCPP_INFO(n_->get_logger(),"Started");
-    return return_type::OK;
-  }
-
-  return_type ElfinHWInterface::stop()
-  {
-    RCLCPP_INFO(n_->get_logger(),"trying to Stop");
-    status_ = hardware_interface::status::STOPPED;
-    for(unsigned int i=0;i<ethercat_drivers_.size();i++)
-    {
-      if(ethercat_drivers_[i]!=NULL)
-      {
-        delete ethercat_drivers_[i];
-      }
-    }
-    RCLCPP_INFO(n_->get_logger(), "Stopped");
-    return return_type::OK;
-  }
-
-  return_type ElfinHWInterface::read()
+  return_type ElfinHWInterface::read(const rclcpp::Time &time, const rclcpp::Duration &period)
   {
     rclcpp::spin_some(n_);
     for(size_t i=0;i<module_infos_.size();i++)
@@ -289,7 +289,6 @@ namespace elfin_hardware_interface{
       module_infos_[i].axis1.position = position_tmp1;
       module_infos_[i].axis1.velocity = -1*vel_count1/module_infos_[i].axis1.count_rad_per_s_factor;
       module_infos_[i].axis1.effort = -1*trq_count1/module_infos_[i].axis1.count_Nm_factor;
-      
 
       int32_t pos_count2 = module_infos_[i].client_ptr->getAxis2PosCnt();
       int16_t vel_count2 = module_infos_[i].client_ptr->getAxis2VelCnt();
@@ -308,51 +307,119 @@ namespace elfin_hardware_interface{
       {
         module_infos_[i].axis1.position_cmd = module_infos_[i].axis1.position;
         module_infos_[i].axis2.position_cmd = module_infos_[i].axis2.position;
+
+        module_infos_[i].axis1.position_cmd_last = module_infos_[i].axis1.position;
+        module_infos_[i].axis2.position_cmd_last = module_infos_[i].axis2.position;
       }
       initialized_ = true;
     }
-    
+    // RCLCPP_INFO(n_->get_logger(),"Read Current Data...");
     return return_type::OK;
   }
 
-  return_type ElfinHWInterface::write()
+  return_type ElfinHWInterface::write(const rclcpp::Time &time, const rclcpp::Duration &period)
   {
-    for(size_t i =0;i<module_infos_.size();i++)
+    // rclcpp::spin_some(n_);
+    bool all_salve_enable = true;
+    for(unsigned int i=0;i<ethercat_drivers_.size();i++)
     {
+      all_salve_enable = all_salve_enable && ethercat_drivers_[i]->getEnableState();
+    }
+    if(all_salve_enable)
+    {
+      for(size_t i =0;i<module_infos_.size();i++)
+      {
 
-      if(!module_infos_[i].client_ptr->inPosBasedMode())
+        if(!module_infos_[i].client_ptr->inPosBasedMode())
+        {
+          module_infos_[i].axis1.position_cmd = module_infos_[i].axis1.position;
+          module_infos_[i].axis2.position_cmd = module_infos_[i].axis2.position;
+        }
+        double position_cmd_count1 = -1*module_infos_[i].axis1.position_cmd * module_infos_[i].axis1.count_rad_factor + module_infos_[i].axis1.count_zero;
+        double position_cmd_count2 = -1*module_infos_[i].axis2.position_cmd * module_infos_[i].axis2.count_rad_factor + module_infos_[i].axis2.count_zero;
+
+        module_infos_[i].client_ptr->setAxis1PosCnt(int32_t(position_cmd_count1));
+        module_infos_[i].client_ptr->setAxis2PosCnt(int32_t(position_cmd_count2));
+    
+        bool is_preparing_switch;
+        boost::mutex::scoped_lock pre_switch_flags_lock(*pre_switch_mutex_ptrs_[i]);
+        is_preparing_switch = pre_switch_flags_[i];
+        pre_switch_flags_lock.unlock();
+        
+        double vel_ff_cmd_count1 = -1 * module_infos_[i].axis1.velocity_cmd * module_infos_[i].axis1.count_rad_per_s_factor /16.0;
+        double vel_ff_cmd_count2 = -1 * module_infos_[i].axis2.velocity_cmd * module_infos_[i].axis2.count_rad_per_s_factor /16.0;
+        
+        if(module_infos_[i].axis1.position_cmd_last == module_infos_[i].axis1.position_cmd)
+        {
+          vel_ff_cmd_count1 = 0;
+        }
+
+        if(module_infos_[i].axis2.position_cmd_last == module_infos_[i].axis2.position_cmd)
+        {
+          vel_ff_cmd_count2 = 0;
+        }
+
+        module_infos_[i].client_ptr->setAxis1VelFFCnt(int16_t(vel_ff_cmd_count1));
+        module_infos_[i].client_ptr->setAxis2VelFFCnt(int16_t(vel_ff_cmd_count2));
+
+        module_infos_[i].axis1.position_cmd_last = module_infos_[i].axis1.position_cmd;
+        module_infos_[i].axis2.position_cmd_last = module_infos_[i].axis2.position_cmd;
+
+        // if(!is_preparing_switch)
+        // {
+        //   double vel_ff_cmd_count1 = -1 * module_infos_[i].axis1.vel_ff_cmd * module_infos_[i].axis1.count_rad_per_s_factor /16.0;
+        //   double vel_ff_cmd_count2 = -1 * module_infos_[i].axis2.vel_ff_cmd * module_infos_[i].axis2.count_rad_per_s_factor /16.0;
+
+        //   module_infos_[i].client_ptr->setAxis1VelFFCnt(int16_t(vel_ff_cmd_count1));
+        //   module_infos_[i].client_ptr->setAxis2VelFFCnt(int16_t(vel_ff_cmd_count2));
+
+        //   double torque_cmd_count1 = -1*module_infos_[i].axis1.effort_cmd * module_infos_[i].axis1.count_Nm_factor;
+        //   double torque_cmd_count2 = -1*module_infos_[i].axis2.effort_cmd * module_infos_[i].axis2.count_Nm_factor;
+
+        //   //module_infos_[i].client_ptr->setAxis1TrqCnt(int16_t(torque_cmd_count1));
+        //   //module_infos_[i].client_ptr->setAxis2TrqCnt(int16_t(torque_cmd_count2));
+        // }
+      }
+    }else{
+      for(size_t i=0;i<module_infos_.size();i++)
       {
         module_infos_[i].axis1.position_cmd = module_infos_[i].axis1.position;
         module_infos_[i].axis2.position_cmd = module_infos_[i].axis2.position;
-      }
-      double position_cmd_count1 = -1*module_infos_[i].axis1.position_cmd * module_infos_[i].axis1.count_rad_factor + module_infos_[i].axis1.count_zero;
-      double position_cmd_count2 = -1*module_infos_[i].axis2.position_cmd * module_infos_[i].axis2.count_rad_factor + module_infos_[i].axis2.count_zero;
 
-      module_infos_[i].client_ptr->setAxis1PosCnt(int32_t(position_cmd_count1));
-      module_infos_[i].client_ptr->setAxis2PosCnt(int32_t(position_cmd_count2));
-  
-      bool is_preparing_switch;
-      boost::mutex::scoped_lock pre_switch_flags_lock(*pre_switch_mutex_ptrs_[i]);
-      is_preparing_switch = pre_switch_flags_[i];
-      pre_switch_flags_lock.unlock();
+        module_infos_[i].axis1.velocity_cmd = module_infos_[i].axis1.velocity;
+        module_infos_[i].axis2.velocity_cmd = module_infos_[i].axis2.velocity;
 
-      if(!is_preparing_switch)
-      {
-        double vel_ff_cmd_count1 = -1 * module_infos_[i].axis1.vel_ff_cmd * module_infos_[i].axis1.count_rad_per_s_factor /16.0;
-        double vel_ff_cmd_count2 = -1 * module_infos_[i].axis2.vel_ff_cmd * module_infos_[i].axis2.count_rad_per_s_factor /16.0;
-
-        //module_infos_[i].client_ptr->setAxis1VelFFCnt(int16_t(vel_ff_cmd_count1));
-        //module_infos_[i].client_ptr->setAxis2VelFFCnt(int16_t(vel_ff_cmd_count2));
-
-        double torque_cmd_count1 = -1*module_infos_[i].axis1.effort_cmd * module_infos_[i].axis1.count_Nm_factor;
-        double torque_cmd_count2 = -1*module_infos_[i].axis2.effort_cmd * module_infos_[i].axis2.count_Nm_factor;
-
-        //module_infos_[i].client_ptr->setAxis1TrqCnt(int16_t(torque_cmd_count1));
-        //module_infos_[i].client_ptr->setAxis2TrqCnt(int16_t(torque_cmd_count2));
+        module_infos_[i].client_ptr->setAxis1VelFFCnt(0);
+        module_infos_[i].client_ptr->setAxis2VelFFCnt(0);
       }
     }
     return return_type::OK;
   }
+
+  CallbackReturn ElfinHWInterface::on_activate(const rclcpp_lifecycle::State & previous_state)
+  {
+    const auto activate_time = rclcpp::Clock().now();
+    const auto period_time = activate_time - rclcpp::Clock().now();
+    read(activate_time, period_time);
+    // status_ = hardware_interface::status::STARTED;
+    RCLCPP_INFO(n_->get_logger(),"Started........");
+    return CallbackReturn::SUCCESS;
+  }
+
+  CallbackReturn ElfinHWInterface::on_deactivate(const rclcpp_lifecycle::State & previous_state)
+  {
+    RCLCPP_INFO(n_->get_logger(),"trying to Stop");
+    for(unsigned int i=0;i<ethercat_drivers_.size();i++)
+    {
+      if(ethercat_drivers_[i]!=NULL)
+      {
+        delete ethercat_drivers_[i];
+      }
+    }
+    RCLCPP_INFO(n_->get_logger(), "Stopped");
+    return CallbackReturn::SUCCESS;
+  }
+
 }
 
 PLUGINLIB_EXPORT_CLASS(elfin_hardware_interface::ElfinHWInterface,

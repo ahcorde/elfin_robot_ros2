@@ -1,7 +1,7 @@
 #!/usr/bin/python3
 
 # elfin5_l_moveit.launch.py:
-# Launch file for the elfin5_l Robot MoveIt!2 SIMULATION in ROS2 Foxy:
+# Launch file for the elfin5_l Robot MoveIt!2 SIMULATION in ROS2 Humble:
 
 # Import libraries:
 import os
@@ -185,7 +185,7 @@ def generate_launch_description():
     load_controllers = []
     for controller in [
         "elfin_arm_controller",
-        "joint_state_controller",
+        "joint_state_broadcaster",
     ]:
         load_controllers += [
             ExecuteProcess(

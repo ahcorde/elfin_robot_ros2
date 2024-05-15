@@ -54,10 +54,10 @@ ElfinMotionAPI::ElfinMotionAPI(const rclcpp::Node::SharedPtr& node,moveit::plann
 
     goal_.trajectory.header.stamp.sec=0;
     goal_.trajectory.header.stamp.nanosec=0;
-
-    joint_goal_sub_=motion_nh_->create_subscription<sensor_msgs::msg::JointState>("joint_goal", rclcpp::SensorDataQoS(),  std::bind(&ElfinMotionAPI::jointGoalCB, this, std::placeholders::_1));
-    cart_goal_sub_=motion_nh_->create_subscription<geometry_msgs::msg::PoseStamped>("cart_goal", rclcpp::SensorDataQoS(), std::bind(&ElfinMotionAPI::cartGoalCB, this, std::placeholders::_1));
-    cart_path_goal_sub_=motion_nh_->create_subscription<geometry_msgs::msg::PoseArray>("cart_path_goal", rclcpp::SensorDataQoS(), std::bind(&ElfinMotionAPI::cartPathGoalCB, this, std::placeholders::_1));
+    cart_goal_sub_=motion_nh_->create_subscription<geometry_msgs::msg::PoseStamped>("cart_goal", 1, std::bind(&ElfinMotionAPI::cartGoalCB, this, std::placeholders::_1));
+    joint_goal_sub_=motion_nh_->create_subscription<sensor_msgs::msg::JointState>("joint_goal", 1,  std::bind(&ElfinMotionAPI::jointGoalCB, this, std::placeholders::_1));
+    // cart_goal_sub_=motion_nh_->create_subscription<geometry_msgs::msg::PoseStamped>("cart_goal", rclcpp::SensorDataQoS(), std::bind(&ElfinMotionAPI::cartGoalCB, this, std::placeholders::_1));
+    cart_path_goal_sub_=motion_nh_->create_subscription<geometry_msgs::msg::PoseArray>("cart_path_goal", 1, std::bind(&ElfinMotionAPI::cartPathGoalCB, this, std::placeholders::_1));
 
     get_reference_link_server_=motion_nh_->create_service<std_srvs::srv::SetBool>("get_reference_link", std::bind(&ElfinMotionAPI::getRefLink_cb,this,std::placeholders::_1,std::placeholders::_2));
     get_end_link_server_=motion_nh_->create_service<std_srvs::srv::SetBool>("get_end_link", std::bind(&ElfinMotionAPI::getEndLink_cb,this, std::placeholders::_1, std::placeholders::_2));
@@ -90,7 +90,7 @@ void ElfinMotionAPI::jointGoalCB(const sensor_msgs::msg::JointState::SharedPtr m
 {
     if(group_->setJointValueTarget(*msg))
     {
-        group_->asyncMove();
+        group_->move();
     }
     else
     {
@@ -107,7 +107,10 @@ void ElfinMotionAPI::cartGoalCB(const geometry_msgs::msg::PoseStamped::SharedPtr
     }
 
     if(!updateTransforms(reference_link))
+    {
+        RCLCPP_WARN(motion_nh_->get_logger(),"can't update tf link");
         return;
+    }
 
     Eigen::Isometry3d affine_rootToRef, affine_refToRoot;
     affine_rootToRef = tf2::transformToEigen(transform_rootToRef_);
@@ -124,7 +127,8 @@ void ElfinMotionAPI::cartGoalCB(const geometry_msgs::msg::PoseStamped::SharedPtr
 
     if(group_->setPoseTarget(affine_pose_goal))
     {
-        group_->asyncMove();
+        RCLCPP_INFO(motion_nh_->get_logger(),"robot will go to the cart goal");
+        group_->move();//asyncMove
     }
     else
     {
@@ -166,7 +170,9 @@ void ElfinMotionAPI::cartPathGoalCB(const geometry_msgs::msg::PoseArray::SharedP
     }
 
     if(!updateTransforms(reference_link))
+    {
         return;
+    }
 
     Eigen::Isometry3d affine_rootToRef, affine_refToRoot;
     affine_rootToRef = tf2::transformToEigen(transform_rootToRef_);
@@ -198,7 +204,7 @@ void ElfinMotionAPI::cartPathGoalCB(const geometry_msgs::msg::PoseArray::SharedP
         RCLCPP_INFO(motion_nh_->get_logger(),"the cartesian path can be %.2f%% acheived", fraction * 100.0);
         trajectoryScaling(cart_path, velocity_scaling_);
         cart_plan.trajectory_=cart_path;
-        group_->asyncExecute(cart_plan);
+        group_->execute(cart_plan);//asyncExecute
     }
     else
     {
@@ -267,7 +273,7 @@ bool ElfinMotionAPI::updateTransforms(std::string ref_link)
   while(rclcpp::ok())
   {
       try{
-        tfBuffer->canTransform(ref_link, root_link_, rclcpp::Time(0), rclcpp::Duration(10.0));
+        tfBuffer->canTransform(ref_link, root_link_, rclcpp::Time(0), rclcpp::Duration(int32_t(10.0), int32_t(0.0)));
         transform_rootToRef_ = tfBuffer->lookupTransform(ref_link, root_link_, rclcpp::Time(0));
         break;
       }
@@ -288,7 +294,7 @@ bool ElfinMotionAPI::updateTransforms(std::string ref_link)
   while(rclcpp::ok())
   {
       try{
-        tfBuffer->canTransform(end_link_, default_tip_link_, rclcpp::Time(0), rclcpp::Duration(10.0));
+        tfBuffer->canTransform(end_link_, default_tip_link_, rclcpp::Time(0), rclcpp::Duration(int32_t(10.0), int32_t(0.0)));
         transform_tipToEnd_ = tfBuffer->lookupTransform(end_link_, default_tip_link_, rclcpp::Time(0));
         break;
       }

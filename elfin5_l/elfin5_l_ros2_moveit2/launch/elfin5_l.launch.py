@@ -1,7 +1,7 @@
 #!/usr/bin/python3
 
 # elfin5_l.launch.py:
-# Launch file for the elfin5_l Robot GAZEBO + MoveIt!2 SIMULATION in ROS2 Foxy:
+# Launch file for the elfin5_l Robot GAZEBO + MoveIt!2 SIMULATION in ROS2 Humble:
 
 # Import libraries:
 import os
@@ -88,21 +88,45 @@ def generate_launch_description():
         executable="robot_state_publisher",
         name="robot_state_publisher",
         output="both",
-        parameters=[robot_description],
+        parameters=[robot_description,{'use_sim_time': True}],
     )
 
     # ***** CONTROLLERS ***** #
     # elfin5_l arm controller:
-    load_elfin_arm_controller = ExecuteProcess(
-        cmd=['ros2', 'control', 'load_start_controller', 'elfin_arm_controller'],
+    # load_elfin_arm_controller = ExecuteProcess(
+    #     cmd=['ros2', 'control', 'load_start_controller', 'elfin_arm_controller'],
+    #     output='screen'
+    # )
+    load_joint_trajectory_controller = ExecuteProcess(
+        cmd=['ros2', 'control', 'load_controller', '--set-state', 'active',
+             'elfin_arm_controller'],
         output='screen'
     )
 
     # Joint STATE Controller:
-    load_joint_state_controller = ExecuteProcess(
-        cmd=['ros2', 'control', 'load_start_controller', 'joint_state_controller'],
+    # load_joint_state_broadcaster = ExecuteProcess(
+    #     cmd=['ros2', 'control', 'load_start_controller', 'joint_state_broadcaster'],
+    #     output='screen'
+    # )
+    load_joint_state_broadcaster = ExecuteProcess(
+        cmd=['ros2', 'control', 'load_controller', '--set-state', 'active',
+             'joint_state_broadcaster'],
         output='screen'
     )
+
+    close_evt1 =  RegisterEventHandler( 
+            event_handler=OnProcessExit(
+                target_action=spawn_entity,
+                on_exit=[load_joint_state_broadcaster],
+            )
+    )
+    close_evt2 = RegisterEventHandler(
+            event_handler=OnProcessExit(
+                target_action=load_joint_state_broadcaster,
+                on_exit=[load_joint_trajectory_controller],
+            )
+    )
+
     # ros2_control:
     ros2_controllers_path = os.path.join(
         get_package_share_directory("elfin5_l_ros2_gazebo"),
@@ -122,7 +146,7 @@ def generate_launch_description():
     load_controllers = []
     for controller in [
         "elfin_arm_controller",
-        "joint_state_controller",
+        "joint_state_broadcaster",
     ]:
         load_controllers += [
             ExecuteProcess(
@@ -162,6 +186,12 @@ def generate_launch_description():
     kinematics_yaml = load_yaml(
         "elfin5_l_ros2_moveit2", "config/kinematics.yaml"
     )
+
+    declare_use_sim_time_cmd = DeclareLaunchArgument(
+    name='use_sim_time',
+    default_value='True',
+    description='Use simulation (Gazebo) clock if true')
+
     robot_description_kinematics = {"robot_description_kinematics": kinematics_yaml}
 
     # Move group: OMPL Planning.
@@ -211,6 +241,7 @@ def generate_launch_description():
             trajectory_execution,
             moveit_controllers,
             planning_scene_monitor_parameters,
+            {'use_sim_time': True},
         ],
     )
 
@@ -229,6 +260,7 @@ def generate_launch_description():
             robot_description_semantic,
             ompl_planning_pipeline_config,
             kinematics_yaml,
+            {'use_sim_time': True},
         ],
         condition=UnlessCondition(load_RVIZfile),
     )
@@ -238,11 +270,12 @@ def generate_launch_description():
             # Gazebo nodes:
             gazebo, 
             spawn_entity,
-            
+            close_evt1,
+            close_evt2,
             # ROS2_CONTROL:
             static_tf,
             robot_state_publisher,
-            ros2_control_node,
+            # ros2_control_node,
             
             RegisterEventHandler(
                 OnProcessExit(
@@ -251,6 +284,7 @@ def generate_launch_description():
 
                         # MoveIt!2:
                         rviz_arg,
+                        declare_use_sim_time_cmd,
                         rviz_node_full,
                         run_move_group_node,
 

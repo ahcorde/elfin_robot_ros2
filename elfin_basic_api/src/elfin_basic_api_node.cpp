@@ -50,12 +50,12 @@ int main(int argc, char** argv)
     rclcpp::NodeOptions node_options;
     node_options.automatically_declare_parameters_from_overrides(true);
     std::shared_ptr<rclcpp::Node> move_group_nh = rclcpp::Node::make_shared("elfin_basic_api_node_base",node_options);
-    rclcpp::Node::SharedPtr base_node = rclcpp::Node::make_shared("base_api_node");
+    std::shared_ptr<rclcpp::Node> base_node = rclcpp::Node::make_shared("base_api_node", node_options);
 
     move_group_cb_queue = move_group_nh->create_callback_group(rclcpp::CallbackGroupType::Reentrant);
-    rclcpp::executors::MultiThreadedExecutor executor(rclcpp::executor::ExecutorArgs(),5);
-    executor.add_node(move_group_nh);
-    std::thread([&executor]() { executor.spin(); }).detach(); 
+    auto executor = std::make_shared<rclcpp::executors::MultiThreadedExecutor>();
+    executor->add_node(move_group_nh);
+    std::thread([&executor]() { executor->spin(); }).detach(); 
 
     moveit::planning_interface::MoveGroupInterfacePtr move_group(
       new moveit::planning_interface::MoveGroupInterface(move_group_nh,move_group_name));
@@ -78,8 +78,7 @@ int main(int argc, char** argv)
     elfin_basic_api::ElfinBasicAPI basic_api(base_node,move_group, "elfin_arm_controller/follow_joint_trajectory", planning_scene_monitor);
 
     rclcpp::spin(base_node);
-    rclcpp::shutdown();
-
-    return 0;
+    // rclcpp::shutdown();
+    // return 0;
 }
 

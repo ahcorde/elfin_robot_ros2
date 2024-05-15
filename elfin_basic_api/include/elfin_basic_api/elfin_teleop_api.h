@@ -70,13 +70,9 @@ class ElfinTeleopAPI
 public:
     ElfinTeleopAPI(const rclcpp::Node::SharedPtr& node,moveit::planning_interface::MoveGroupInterfacePtr& group, std::string action_name, planning_scene_monitor::PlanningSceneMonitorPtr& planning_scene_monitor);
     
-    // void teleopJointCmdNoLimitCB(const std_msgs::Int64ConstPtr &msg);
     void teleopJointCmdNoLimitCB(const std_msgs::msg::Int64::SharedPtr msg);
-    // void teleopJointCmdCB(const std_msgs::Int64ConstPtr &msg);
     void teleopJointCmdCB(const std_msgs::msg::Int64 &msg);
-    // void teleopCartCmdCB(const std_msgs::Int64ConstPtr &msg);
     void teleopCartCmdCB(const std_msgs::msg::Int64 &msg);
-    // void teleopStopCB(const std_msgs::EmptyConstPtr &msg);
     void teleopStopCB(const std_msgs::msg::Empty &msg);
 
 
@@ -91,34 +87,17 @@ public:
 
     void PoseStampedRotation(geometry_msgs::msg::PoseStamped &pose_stamped, const tf2::Vector3 &axis, double angle);
 
-    // std::shared_ptr<rclcpp::Node> teleop_nh_,root_nh_;
-
 private:
 
     moveit::planning_interface::MoveGroupInterfacePtr& group_;
-    // moveit::planning_interface::PlanningSceneInterface planning_scene_interface_;
     planning_scene_monitor::PlanningSceneMonitorPtr& planning_scene_monitor_;
-    // ros::NodeHandle root_nh_, teleop_nh_;
     rclcpp::Node::SharedPtr root_nh_;
     rclcpp::Node::SharedPtr teleop_nh_;
-    // std::shared_ptr<rclcpp::Node> teleop_nh_,root_nh_;
-    
-    // actionlib::SimpleActionClient<control_msgs::FollowJointTrajectoryAction> action_client_;
-    // rclcpp_action::ServerGoalHandle<control_msgs::action::FollowJointTrajectory> action_client_;
-    // std::shared_ptr<control_msgs::action::FollowJointTrajectory> action_client_;
+
     rclcpp_action::Client<control_msgs::action::FollowJointTrajectory>::SharedPtr action_client_;
-    // control_msgs::FollowJointTrajectoryGoal goal_;
     control_msgs::action::FollowJointTrajectory::Goal goal_;
 
-
-    // ros::Subscriber sub_teleop_joint_command_no_limit_;
     rclcpp::Subscription<std_msgs::msg::Int64>::SharedPtr  sub_teleop_joint_command_no_limit_;
-
-
-    // ros::ServiceServer joint_teleop_server_;
-    // ros::ServiceServer cart_teleop_server_;
-    // ros::ServiceServer home_teleop_server_;
-    // ros::ServiceServer teleop_stop_server_;
 
     rclcpp::Service<elfin_robot_msgs::srv::SetInt16>::SharedPtr joint_teleop_server_;
     rclcpp::Service<elfin_robot_msgs::srv::SetInt16>::SharedPtr cart_teleop_server_;

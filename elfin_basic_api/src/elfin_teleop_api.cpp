@@ -214,7 +214,7 @@ bool ElfinTeleopAPI::cartTeleop_cb(const std::shared_ptr<elfin_robot_msgs::srv::
     while(rclcpp::ok())
     {
         try{
-            tfBuffer -> canTransform(reference_link_, root_link_, rclcpp::Time(0), rclcpp::Duration(10.0)); 
+            tfBuffer -> canTransform(reference_link_, root_link_, rclcpp::Time(0), rclcpp::Duration(int32_t(10.0), int32_t(0.0))); 
             transform_rootToRef_ = tfBuffer->lookupTransform(reference_link_, root_link_, tf2::TimePointZero);
             break;
         }
@@ -235,7 +235,7 @@ bool ElfinTeleopAPI::cartTeleop_cb(const std::shared_ptr<elfin_robot_msgs::srv::
     while(rclcpp::ok())
     {
         try{
-        tfBuffer -> canTransform(end_link_, default_tip_link_, rclcpp::Time(0), rclcpp::Duration(10.0)); 
+        tfBuffer -> canTransform(end_link_, default_tip_link_, rclcpp::Time(0), rclcpp::Duration(int32_t(10.0), int32_t(0.0))); 
 
         transform_tipToEnd_ = tfBuffer ->lookupTransform(end_link_, default_tip_link_, rclcpp::Time(0));
 
@@ -483,8 +483,6 @@ bool ElfinTeleopAPI::homeTeleop_cb(const std::shared_ptr<std_srvs::srv::SetBool:
         if(!plan_scene->isStateColliding(kinematic_state, group_->getName()))
         {
             point_tmp.positions=position_goal;
-            // rclcpp::Duration::from_seconds dur(duration_from_speed);
-
             point_tmp.time_from_start=rclcpp::Duration::from_seconds(duration_from_speed);;
             goal_.trajectory.points.push_back(point_tmp);
         }
@@ -511,7 +509,6 @@ bool ElfinTeleopAPI::teleopStop_cb(const std::shared_ptr<std_srvs::srv::SetBool:
 {
     goal_.trajectory.points.clear();
     action_client_->async_send_goal(goal_);
-
     resp->success=true;
     resp->message="stop moving";
     return true;

@@ -2,7 +2,7 @@
 
 
 # elfin3_gazebo.launch.py:
-# Launch file for the elfin3 Robot GAZEBO SIMULATION in ROS2 Foxy:
+# Launch file for the elfin3 Robot GAZEBO SIMULATION in ROS2 Humble:
 
 # Import libraries:
 import os
@@ -85,19 +85,45 @@ def generate_launch_description():
 
     # ***** CONTROLLERS ***** #
     # Joint STATE Controller:
-    load_joint_state_controller = ExecuteProcess(
-        cmd=['ros2', 'control', 'load_start_controller', 'joint_state_controller'],
+    # load_joint_state_broadcaster = ExecuteProcess(
+    #     cmd=['ros2', 'control', 'load_start_controller', 'joint_state_broadcaster'],
+    #     output='screen'
+    # )
+    load_joint_state_broadcaster = ExecuteProcess(
+        cmd=['ros2', 'control', 'load_controller', '--set-state', 'active',
+             'joint_state_broadcaster'],
         output='screen'
     )
+
     # Joint TRAJECTORY Controller:
+    # load_joint_trajectory_controller = ExecuteProcess(
+    #     cmd=['ros2', 'control', 'load_start_controller', 'joint_trajectory_controller'],
+    #     output='screen'
+    # )
     load_joint_trajectory_controller = ExecuteProcess(
-        cmd=['ros2', 'control', 'load_start_controller', 'joint_trajectory_controller'],
+        cmd=['ros2', 'control', 'load_controller', '--set-state', 'active',
+             'elfin_arm_controller'],
         output='screen'
+    )
+
+    close_evt1 =  RegisterEventHandler( 
+            event_handler=OnProcessExit(
+                target_action=spawn_entity,
+                on_exit=[load_joint_state_broadcaster],
+            )
+    )
+    close_evt2 = RegisterEventHandler(
+            event_handler=OnProcessExit(
+                target_action=load_joint_state_broadcaster,
+                on_exit=[load_joint_trajectory_controller],
+            )
     )
 
     # ***** RETURN LAUNCH DESCRIPTION ***** #
     return LaunchDescription([
         gazebo, 
-        node_robot_state_publisher,
-        spawn_entity
+        spawn_entity,
+        close_evt1,
+        close_evt2,
+        node_robot_state_publisher
     ])

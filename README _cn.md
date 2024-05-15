@@ -8,20 +8,20 @@ If you don't speak chinese, please [click here](./README_english.md)
 </p>
 
 
-本文件夹中包含了多个为Elfin机器人提供ROS2支持的软件包。推荐的运行环境为 Ubuntu 20.04 + ROS2 Foxy, 其他环境下的运行情况没有测试过。
+本文件夹中包含了多个为Elfin机器人提供ROS2支持的软件包。推荐的运行环境为 Ubuntu 20.04 + ROS2 humble, 其他环境下的运行情况没有测试过。
 
 ### 安装软件包
 
-#### Ubuntu 20.04 + ROS2 Foxy
+#### Ubuntu 20.04 + ROS2 humble
 
 **安装一些重要的依赖包**
 ```sh
-$ sudo apt-get install ros-foxy-joint-trajectory-controller
-$ sudo apt-get install ros-foxy-controller-manager
-$ sudo apt-get install ros-foxy-trajectory-msgs
-$ sudo apt-get install ros-foxy-gazebo-ros2-control*
-$ sudo apt-get install ros-foxy-joint-state-controller
-$ sudo apt-get install ros-foxy-position-controllers
+$ sudo apt-get install ros-humble-joint-trajectory-controller
+$ sudo apt-get install ros-humble-controller-manager
+$ sudo apt-get install ros-humble-trajectory-msgs
+$ sudo apt-get install ros-humble-gazebo-ros2-control*
+$ sudo apt-get install ros-humble-joint-state-controller
+$ sudo apt-get install ros-humble-position-controllers
 ```
 
 **安装一些依赖包:**
@@ -36,7 +36,7 @@ $ sudo pip3 install transforms3d
 安装/升级MoveIt!：
 ```sh
 $ sudo apt-get update
-$ sudo apt-get install ros-foxy-moveit
+$ sudo apt-get install ros-humble-moveit
 ```
 
 **安装本软件包**
@@ -45,7 +45,7 @@ $ sudo apt-get install ros-foxy-moveit
 假设你的工作空间是~/catkin_ws，你需要运行的命令如下：
 ```sh
 $ cd ~/catkin_ws/src
-$ git clone -b foxy_ethercat https://github.com/hans-robot/elfin_robot_ros2.git
+$ git clone -b humble_ethercat https://github.com/hans-robot/elfin_robot_ros2.git
 $ cd ..
 $ colcon build
 $ source install/setup.bash
@@ -92,12 +92,12 @@ $ ros2 launch elfin3_ros2_moveit2 elfin3_moveit.launch.py
 运行MoveIt!模块, RViz界面:
 ```sh
 $ sudo su
-$ ros2 launch elfin3_ros2_moveit elfin3_moveit_rviz.launch.py
+$ ros2 launch elfin3_ros2_moveit2 elfin3_moveit_rviz.launch.py
 ```
 运行后台程序：
 ```sh
 $ sudo su
-$ ros2 launch elfin_ros2_moveit2 elfin3_basic_api.launch.py
+$ ros2 launch elfin3_ros2_moveit2 elfin3_basic_api.launch.py
 ```
 运行Elfin Control Panel界面
 ```sh

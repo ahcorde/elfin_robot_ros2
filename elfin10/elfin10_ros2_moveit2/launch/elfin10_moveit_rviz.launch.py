@@ -1,7 +1,7 @@
 #!/usr/bin/python3
 
 # elfin10_moveit.launch.py:
-# Launch file for the elfin10 Robot MoveIt!2 SIMULATION in ROS2 Foxy:
+# Launch file for the elfin10 Robot MoveIt!2 SIMULATION in ROS2 Humble:
 
 # Import libraries:
 import os
@@ -187,7 +187,7 @@ def generate_launch_description():
     load_controllers = []
     for controller in [
         "elfin_arm_controller",
-        "joint_state_controller",
+        "joint_state_broadcaster",
     ]:
         load_controllers += [
             ExecuteProcess(
@@ -197,11 +197,25 @@ def generate_launch_description():
             )
         ]
 
+    elfin_controller_spawner = Node(
+        package="controller_manager",
+        executable="spawner",
+        arguments=["elfin_arm_controller", "--controller-manager", "/controller_manager"],
+    )
+
+    joint_state_spawner = Node(
+        package="controller_manager",
+        executable="spawner",
+        arguments=["joint_state_broadcaster", "--controller-manager", "/controller_manager"],
+    )
+    
     return LaunchDescription(
         [   
             rviz_arg,
             rviz_node_full,
             run_move_group_node,
+            elfin_controller_spawner,
+            joint_state_spawner
         ]
         + load_controllers
     )

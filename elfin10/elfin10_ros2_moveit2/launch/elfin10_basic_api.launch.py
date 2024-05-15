@@ -61,7 +61,7 @@ def generate_launch_description():
         package="elfin_basic_api",
         executable="elfin_basic_api_node",
         output="screen",
-        parameters=[robot_description,robot_description_semantic,kinematics_yaml],
+        parameters=[robot_description,robot_description_semantic,kinematics_yaml,{'use_sim_time': True}],
     )
 
     return LaunchDescription(

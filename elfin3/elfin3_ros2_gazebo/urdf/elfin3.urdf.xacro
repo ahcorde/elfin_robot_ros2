@@ -27,7 +27,7 @@
   <joint name="world_base" type="fixed">
     <origin
       xyz="0 0 0"
-      rpy="0 0 -1.5708" />
+      rpy="0 0 0" />
     <parent
       link="world" />
     <child
@@ -39,7 +39,7 @@
   <joint name="elfin_base_joint" type="fixed">
     <origin
       xyz="0 0 0"
-      rpy="0 0 ${PI/2}" />
+      rpy="0 0 0" />
     <parent
       link="elfin_base_link" />
     <child

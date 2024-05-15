@@ -9,20 +9,20 @@ Chinese version of the README -> please [click here](./README_cn.md)
   <img src="docs/images/elfin.png" />
 </p>
 
-This repository provides ROS2 support for the Elfin Robot. The recommend operating environment is on Ubuntu 20.04 with ROS Foxy. So far These packages haven't been tested in other environment.
+This repository provides ROS2 support for the Elfin Robot. The recommend operating environment is on Ubuntu 20.04 with ROS humble. So far These packages haven't been tested in other environment.
 
 ### Installation
 
-#### Ubuntu 20.04 + ROS Foxy
+#### Ubuntu 20.04 + ROS Humble
 
 **Install some important dependent software packages:**
 ```sh
-$ sudo apt-get install ros-foxy-joint-trajectory-controller
-$ sudo apt-get install ros-foxy-controller-manager
-$ sudo apt-get install ros-foxy-trajectory-msgs
-$ sudo apt-get install ros-foxy-gazebo-ros2-control*
-$ sudo apt-get install ros-foxy-joint-state-controller
-$ sudo apt-get install ros-foxy-position-controllers
+$ sudo apt-get install ros-humble-joint-trajectory-controller
+$ sudo apt-get install ros-humble-controller-manager
+$ sudo apt-get install ros-humble-trajectory-msgs
+$ sudo apt-get install ros-humble-gazebo-ros2-control*
+$ sudo apt-get install ros-humble-joint-state-controller
+$ sudo apt-get install ros-humble-position-controllers
 ```
 
 **Install related software packages:**
@@ -40,7 +40,7 @@ Install/Upgrade MoveIt!:
 
 ```sh
 $ sudo apt-get update
-$ sudo apt-get install ros-foxy-moveit
+$ sudo apt-get install ros-humble-moveit
 ```
 
 
@@ -53,7 +53,7 @@ Make sure to source the correct setup file according to your workspace hierarchy
 Assuming your catkin workspace folder is ~/catkin_ws, you should use the following commands:
 ```sh
 $ cd ~/catkin_ws/src
-$ git clone -b foxy_ethercat https://github.com/hans-robot/elfin_robot_ros2.git
+$ git clone -b humble_ethercat https://github.com/hans-robot/elfin_robot_ros2.git
 $ cd ..
 $ colcon build
 $ source install/setup.bash
