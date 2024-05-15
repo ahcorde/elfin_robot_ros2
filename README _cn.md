@@ -8,11 +8,11 @@ If you don't speak chinese, please [click here](./README_english.md)
 </p>
 
 
-本文件夹中包含了多个为Elfin机器人提供ROS2支持的软件包。推荐的运行环境为 Ubuntu 20.04 + ROS2 humble, 其他环境下的运行情况没有测试过。
+本文件夹中包含了多个为Elfin机器人提供ROS2支持的软件包。推荐的运行环境为 Ubuntu 22.04 + ROS2 humble, 其他环境下的运行情况没有测试过。
 
 ### 安装软件包
 
-#### Ubuntu 20.04 + ROS2 humble
+#### Ubuntu 22.04 + ROS2 humble
 
 **安装一些重要的依赖包**
 ```sh

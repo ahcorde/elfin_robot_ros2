@@ -9,11 +9,11 @@ Chinese version of the README -> please [click here](./README_cn.md)
   <img src="docs/images/elfin.png" />
 </p>
 
-This repository provides ROS2 support for the Elfin Robot. The recommend operating environment is on Ubuntu 20.04 with ROS humble. So far These packages haven't been tested in other environment.
+This repository provides ROS2 support for the Elfin Robot. The recommend operating environment is on Ubuntu 22.04 with ROS humble. So far These packages haven't been tested in other environment.
 
 ### Installation
 
-#### Ubuntu 20.04 + ROS Humble
+#### Ubuntu 22.04 + ROS Humble
 
 **Install some important dependent software packages:**
 ```sh
